@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.vscode/**'
+      - '.idea/**'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  fractional-realestate-py-contracts-validate:
+    name: Run fractional-realestate-py-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/fractional-realestate-py-contracts-ci.yaml
+
+  fractional-realestate-py-contracts-release:
+    name: Run fractional-realestate-py-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/fractional-realestate-py-contracts-cd.yaml
+    needs: fractional-realestate-py-contracts-validate
+
+  fractional-realestate-py-frontend-validate:
+    name: Run fractional-realestate-py-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/fractional-realestate-py-frontend-ci.yaml
+
+  fractional-realestate-py-frontend-release:
+    name: Run fractional-realestate-py-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/fractional-realestate-py-frontend-cd.yaml
+    needs: fractional-realestate-py-frontend-validate
