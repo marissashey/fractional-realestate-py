@@ -1,0 +1,429 @@
+#pragma version 10
+#pragma typetrack false
+
+// smart_contracts.fractional_real_estate.contract.FractionalRealEstate.__algopy_entrypoint_with_init() -> uint64:
+main:
+    intcblock 1 0 18
+    bytecblock 0x151f7c75 "properties"
+    // smart_contracts/fractional_real_estate/contract.py:25
+    // class FractionalRealEstate(ARC4Contract):
+    txn NumAppArgs
+    bz main_bare_routing@8
+    pushbytess 0x5eac6bc5 0x7d507a84 0xf30ab43b // method "create_property_listing(string,uint64,uint64)uint64", method "purchase_from_lister(uint64,uint64,pay)bool", method "get_property_info(uint64)(string,uint64,uint64,uint64,uint64,address)"
+    txna ApplicationArgs 0
+    match main_create_property_listing_route@5 main_purchase_from_lister_route@6 main_get_property_info_route@7
+
+main_after_if_else@10:
+    // smart_contracts/fractional_real_estate/contract.py:25
+    // class FractionalRealEstate(ARC4Contract):
+    intc_1 // 0
+    return
+
+main_get_property_info_route@7:
+    // smart_contracts/fractional_real_estate/contract.py:108
+    // @abimethod(readonly=True)
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // smart_contracts/fractional_real_estate/contract.py:25
+    // class FractionalRealEstate(ARC4Contract):
+    txna ApplicationArgs 1
+    // smart_contracts/fractional_real_estate/contract.py:108
+    // @abimethod(readonly=True)
+    callsub get_property_info
+    bytec_0 // 0x151f7c75
+    swap
+    concat
+    log
+    intc_0 // 1
+    return
+
+main_purchase_from_lister_route@6:
+    // smart_contracts/fractional_real_estate/contract.py:66
+    // @abimethod()
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // smart_contracts/fractional_real_estate/contract.py:25
+    // class FractionalRealEstate(ARC4Contract):
+    txna ApplicationArgs 1
+    txna ApplicationArgs 2
+    txn GroupIndex
+    intc_0 // 1
+    -
+    dup
+    gtxns TypeEnum
+    intc_0 // pay
+    ==
+    assert // transaction type is pay
+    // smart_contracts/fractional_real_estate/contract.py:66
+    // @abimethod()
+    callsub purchase_from_lister
+    pushbytes 0x00
+    intc_1 // 0
+    uncover 2
+    setbit
+    bytec_0 // 0x151f7c75
+    swap
+    concat
+    log
+    intc_0 // 1
+    return
+
+main_create_property_listing_route@5:
+    // smart_contracts/fractional_real_estate/contract.py:34
+    // @abimethod()
+    txn OnCompletion
+    !
+    assert // OnCompletion is not NoOp
+    txn ApplicationID
+    assert // can only call when not creating
+    // smart_contracts/fractional_real_estate/contract.py:25
+    // class FractionalRealEstate(ARC4Contract):
+    txna ApplicationArgs 1
+    txna ApplicationArgs 2
+    txna ApplicationArgs 3
+    // smart_contracts/fractional_real_estate/contract.py:34
+    // @abimethod()
+    callsub create_property_listing
+    bytec_0 // 0x151f7c75
+    swap
+    concat
+    log
+    intc_0 // 1
+    return
+
+main_bare_routing@8:
+    // smart_contracts/fractional_real_estate/contract.py:25
+    // class FractionalRealEstate(ARC4Contract):
+    txn OnCompletion
+    bnz main_after_if_else@10
+    txn ApplicationID
+    !
+    assert // can only call when creating
+    intc_0 // 1
+    return
+
+
+// smart_contracts.fractional_real_estate.contract.FractionalRealEstate.create_property_listing(property_address: bytes, shares: bytes, price_per_share: bytes) -> bytes:
+create_property_listing:
+    // smart_contracts/fractional_real_estate/contract.py:34-40
+    // @abimethod()
+    // def create_property_listing(
+    //     self,
+    //     property_address: arc4.String,
+    //     shares: arc4.UInt64,
+    //     price_per_share: arc4.UInt64,
+    // ) -> arc4.UInt64:
+    proto 3 1
+    // smart_contracts/fractional_real_estate/contract.py:41-50
+    // # Create the property asset (ASA) using an inner transaction
+    // txn_result = itxn.AssetConfig(
+    //     asset_name=property_address.native,
+    //     unit_name="PROP",
+    //     total=shares.native,
+    //     decimals=0,
+    //     manager=Global.current_application_address,
+    //     reserve=Global.current_application_address,
+    //     fee=0,
+    // ).submit()
+    itxn_begin
+    // smart_contracts/fractional_real_estate/contract.py:43
+    // asset_name=property_address.native,
+    frame_dig -3
+    extract 2 0
+    // smart_contracts/fractional_real_estate/contract.py:45
+    // total=shares.native,
+    frame_dig -2
+    btoi
+    // smart_contracts/fractional_real_estate/contract.py:47
+    // manager=Global.current_application_address,
+    global CurrentApplicationAddress
+    // smart_contracts/fractional_real_estate/contract.py:48
+    // reserve=Global.current_application_address,
+    dup
+    itxn_field ConfigAssetReserve
+    itxn_field ConfigAssetManager
+    // smart_contracts/fractional_real_estate/contract.py:46
+    // decimals=0,
+    intc_1 // 0
+    itxn_field ConfigAssetDecimals
+    itxn_field ConfigAssetTotal
+    // smart_contracts/fractional_real_estate/contract.py:44
+    // unit_name="PROP",
+    pushbytes "PROP"
+    itxn_field ConfigAssetUnitName
+    itxn_field ConfigAssetName
+    // smart_contracts/fractional_real_estate/contract.py:41-42
+    // # Create the property asset (ASA) using an inner transaction
+    // txn_result = itxn.AssetConfig(
+    pushint 3 // acfg
+    itxn_field TypeEnum
+    // smart_contracts/fractional_real_estate/contract.py:49
+    // fee=0,
+    intc_1 // 0
+    itxn_field Fee
+    // smart_contracts/fractional_real_estate/contract.py:41-50
+    // # Create the property asset (ASA) using an inner transaction
+    // txn_result = itxn.AssetConfig(
+    //     asset_name=property_address.native,
+    //     unit_name="PROP",
+    //     total=shares.native,
+    //     decimals=0,
+    //     manager=Global.current_application_address,
+    //     reserve=Global.current_application_address,
+    //     fee=0,
+    // ).submit()
+    itxn_submit
+    itxn CreatedAssetID
+    // smart_contracts/fractional_real_estate/contract.py:60
+    // property_asset_id=arc4.UInt64(asset_id),
+    itob
+    // smart_contracts/fractional_real_estate/contract.py:61
+    // owner_address=arc4.Address(Txn.sender),
+    txn Sender
+    // smart_contracts/fractional_real_estate/contract.py:54-62
+    // # Store the property struct in the BoxMap
+    // self.listed_properties[arc4.UInt64(asset_id)] = PropertyStruct(
+    //     address=property_address,
+    //     total_shares=shares,
+    //     available_shares=shares,
+    //     price_per_share=price_per_share,
+    //     property_asset_id=arc4.UInt64(asset_id),
+    //     owner_address=arc4.Address(Txn.sender),
+    // )
+    pushbytes 0x0042
+    frame_dig -2
+    concat
+    frame_dig -2
+    concat
+    frame_dig -1
+    concat
+    dig 2
+    concat
+    swap
+    concat
+    frame_dig -3
+    concat
+    // smart_contracts/fractional_real_estate/contract.py:54-55
+    // # Store the property struct in the BoxMap
+    // self.listed_properties[arc4.UInt64(asset_id)] = PropertyStruct(
+    bytec_1 // "properties"
+    dig 2
+    concat
+    // smart_contracts/fractional_real_estate/contract.py:54-62
+    // # Store the property struct in the BoxMap
+    // self.listed_properties[arc4.UInt64(asset_id)] = PropertyStruct(
+    //     address=property_address,
+    //     total_shares=shares,
+    //     available_shares=shares,
+    //     price_per_share=price_per_share,
+    //     property_asset_id=arc4.UInt64(asset_id),
+    //     owner_address=arc4.Address(Txn.sender),
+    // )
+    dup
+    box_del
+    pop
+    swap
+    box_put
+    // smart_contracts/fractional_real_estate/contract.py:64
+    // return arc4.UInt64(asset_id)
+    retsub
+
+
+// smart_contracts.fractional_real_estate.contract.FractionalRealEstate.purchase_from_lister(property_id: bytes, shares: bytes, payment: uint64) -> uint64:
+purchase_from_lister:
+    // smart_contracts/fractional_real_estate/contract.py:66-72
+    // @abimethod()
+    // def purchase_from_lister(
+    //     self,
+    //     property_id: arc4.UInt64,
+    //     shares: arc4.UInt64,
+    //     payment: gtxn.PaymentTransaction,
+    // ) -> bool:
+    proto 3 1
+    // smart_contracts/fractional_real_estate/contract.py:73
+    // assert property_id in self.listed_properties, "Property not listed"
+    bytec_1 // "properties"
+    frame_dig -3
+    concat
+    dup
+    box_len
+    bury 1
+    assert // Property not listed
+    // smart_contracts/fractional_real_estate/contract.py:74
+    // property_struct = self.listed_properties[property_id].copy()
+    dup
+    box_get
+    assert // check self.listed_properties entry exists
+    // smart_contracts/fractional_real_estate/contract.py:76
+    // shares.native <= property_struct.available_shares.native
+    frame_dig -2
+    btoi
+    dig 1
+    pushint 10 // 10
+    extract_uint64
+    dup2
+    <=
+    // smart_contracts/fractional_real_estate/contract.py:75-77
+    // assert (
+    //     shares.native <= property_struct.available_shares.native
+    // ), "Not enough shares available"
+    assert // Not enough shares available
+    // smart_contracts/fractional_real_estate/contract.py:79
+    // payment.amount == shares.native * property_struct.price_per_share.native
+    frame_dig -1
+    gtxns Amount
+    dig 3
+    intc_2 // 18
+    extract_uint64
+    dig 3
+    *
+    ==
+    // smart_contracts/fractional_real_estate/contract.py:78-80
+    // assert (
+    //     payment.amount == shares.native * property_struct.price_per_share.native
+    // ), "Invalid payment amount"
+    assert // Invalid payment amount
+    // smart_contracts/fractional_real_estate/contract.py:82
+    // payment.receiver == Global.current_application_address
+    frame_dig -1
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    // smart_contracts/fractional_real_estate/contract.py:81-83
+    // assert (
+    //     payment.receiver == Global.current_application_address
+    // ), "Invalid payment receiver"
+    assert // Invalid payment receiver
+    // smart_contracts/fractional_real_estate/contract.py:84
+    // assert payment.sender == Txn.sender, "Invalid payment sender"
+    frame_dig -1
+    gtxns Sender
+    txn Sender
+    ==
+    assert // Invalid payment sender
+    // smart_contracts/fractional_real_estate/contract.py:86-91
+    // # Transfer shares to buyer
+    // itxn.AssetTransfer(
+    //     xfer_asset=property_struct.property_asset_id.native,
+    //     asset_receiver=Txn.sender,
+    //     asset_amount=shares.native,
+    // ).submit()
+    itxn_begin
+    // smart_contracts/fractional_real_estate/contract.py:88
+    // xfer_asset=property_struct.property_asset_id.native,
+    dig 2
+    pushint 26 // 26
+    extract_uint64
+    // smart_contracts/fractional_real_estate/contract.py:89
+    // asset_receiver=Txn.sender,
+    txn Sender
+    dig 3
+    itxn_field AssetAmount
+    itxn_field AssetReceiver
+    itxn_field XferAsset
+    // smart_contracts/fractional_real_estate/contract.py:86-87
+    // # Transfer shares to buyer
+    // itxn.AssetTransfer(
+    pushint 4 // axfer
+    itxn_field TypeEnum
+    intc_1 // 0
+    itxn_field Fee
+    // smart_contracts/fractional_real_estate/contract.py:86-91
+    // # Transfer shares to buyer
+    // itxn.AssetTransfer(
+    //     xfer_asset=property_struct.property_asset_id.native,
+    //     asset_receiver=Txn.sender,
+    //     asset_amount=shares.native,
+    // ).submit()
+    itxn_submit
+    // smart_contracts/fractional_real_estate/contract.py:95
+    // property_struct.available_shares.native - shares.native
+    dig 1
+    -
+    // smart_contracts/fractional_real_estate/contract.py:93-96
+    // # Update available shares
+    // property_struct.available_shares = arc4.UInt64(
+    //     property_struct.available_shares.native - shares.native
+    // )
+    itob
+    uncover 2
+    swap
+    replace2 10
+    // smart_contracts/fractional_real_estate/contract.py:97
+    // self.listed_properties[property_id] = property_struct.copy()
+    dig 2
+    box_del
+    pop
+    uncover 2
+    dig 1
+    box_put
+    // smart_contracts/fractional_real_estate/contract.py:99-104
+    // # Pay the owner
+    // itxn.Payment(
+    //     amount=shares.native * property_struct.price_per_share.native,
+    //     receiver=property_struct.owner_address.native,
+    //     fee=0,
+    // ).submit()
+    itxn_begin
+    // smart_contracts/fractional_real_estate/contract.py:101
+    // amount=shares.native * property_struct.price_per_share.native,
+    dup
+    intc_2 // 18
+    extract_uint64
+    uncover 2
+    *
+    // smart_contracts/fractional_real_estate/contract.py:102
+    // receiver=property_struct.owner_address.native,
+    swap
+    extract 34 32 // on error: Index access is out of bounds
+    itxn_field Receiver
+    itxn_field Amount
+    // smart_contracts/fractional_real_estate/contract.py:99-100
+    // # Pay the owner
+    // itxn.Payment(
+    intc_0 // pay
+    itxn_field TypeEnum
+    // smart_contracts/fractional_real_estate/contract.py:103
+    // fee=0,
+    intc_1 // 0
+    itxn_field Fee
+    // smart_contracts/fractional_real_estate/contract.py:99-104
+    // # Pay the owner
+    // itxn.Payment(
+    //     amount=shares.native * property_struct.price_per_share.native,
+    //     receiver=property_struct.owner_address.native,
+    //     fee=0,
+    // ).submit()
+    itxn_submit
+    // smart_contracts/fractional_real_estate/contract.py:106
+    // return True
+    intc_0 // 1
+    retsub
+
+
+// smart_contracts.fractional_real_estate.contract.FractionalRealEstate.get_property_info(property_id: bytes) -> bytes:
+get_property_info:
+    // smart_contracts/fractional_real_estate/contract.py:108-109
+    // @abimethod(readonly=True)
+    // def get_property_info(self, property_id: arc4.UInt64) -> PropertyStruct:
+    proto 1 1
+    // smart_contracts/fractional_real_estate/contract.py:110
+    // assert property_id in self.listed_properties, "Property not listed"
+    bytec_1 // "properties"
+    frame_dig -1
+    concat
+    dup
+    box_len
+    bury 1
+    assert // Property not listed
+    // smart_contracts/fractional_real_estate/contract.py:111
+    // return self.listed_properties[property_id]
+    box_get
+    assert // check self.listed_properties entry exists
+    retsub

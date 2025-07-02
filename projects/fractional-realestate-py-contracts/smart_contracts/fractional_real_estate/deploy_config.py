@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 # define deployment behaviour based on supplied app spec
 def deploy() -> None:
     from smart_contracts.artifacts.fractional_real_estate.fractional_real_estate_client import (
-        HelloArgs,
         FractionalRealEstateFactory,
     )
 
@@ -36,9 +35,4 @@ def deploy() -> None:
             )
         )
 
-    name = "world"
-    response = app_client.send.hello(args=HelloArgs(name=name))
-    logger.info(
-        f"Called hello on {app_client.app_name} ({app_client.app_id}) "
-        f"with name={name}, received: {response.abi_return}"
-    )
+    logger.info(f"Deployed {app_client.app_name} ({app_client.app_id})")
