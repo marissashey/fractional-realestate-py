@@ -1,5 +1,5 @@
-import React from 'react'
 import { HomeIcon } from '@heroicons/react/24/outline'
+import React from 'react'
 
 interface HeroSectionProps {
   appClientError?: Error | null
@@ -57,7 +57,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => (
       <div className="flex gap-4 mt-8 items-center">
         <img src="/algorand-logo-icon.svg" alt="Algorand" className="h-8" title="Algorand" />
         <img src="/react-logo.svg" alt="React" className="h-8" title="React" />
-        <img src="/typescript-logo.svg" alt="TypeScript" className="h-8" title="TypeScript" />
+        <img src="/python-logo.svg" alt="Python" className="h-8" title="Python" />
         <img src="/tailwind-logo.svg" alt="Tailwind CSS" className="h-8" title="Tailwind CSS" />
       </div>
 
