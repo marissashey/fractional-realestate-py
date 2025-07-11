@@ -2,9 +2,9 @@
 // The client lets us call methods on the FractionalRealEstate smart contract directly on the Algorand blockchain.
 // Any component in the app can use this context to interact with the contract (for example, to list a property or buy shares).
 
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 // These imports allow us to interact with the FractionalRealEstate smart contract on the Algorand blockchain
-import { FractionalRealEstateFactory, FractionalRealEstateClient } from '../contracts/FractionalRealestate'
+import { FractionalRealEstateClient, FractionalRealEstateFactory } from '../contracts/FractionalRealEstate'
 // This utility helps us connect to the Algorand blockchain network
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 // useWallet is a React hook that lets us connect to the user's Algorand wallet (like Pera or Lute)
@@ -13,8 +13,8 @@ import { useWallet } from '@txnlab/use-wallet-react'
 // These helpers get the necessary configuration to connect to Algorand nodes from our environment
 import {
   getAlgodConfigFromViteEnvironment,
-  getIndexerConfigFromViteEnvironment,
   getAppIdFromViteEnvironment,
+  getIndexerConfigFromViteEnvironment,
 } from '../utils/getAlgorandConfigs'
 
 // Get the smart contract app ID from the environment

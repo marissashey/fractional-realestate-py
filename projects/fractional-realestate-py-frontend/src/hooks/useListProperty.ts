@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { FractionalRealEstateClient } from '../contracts/FractionalRealestate'
 import { microAlgo } from '@algorandfoundation/algokit-utils'
+import { useState } from 'react'
+import { FractionalRealEstateClient } from '../contracts/FractionalRealEstate'
 
 /**
  * Custom hook to list a new property for fractional ownership.

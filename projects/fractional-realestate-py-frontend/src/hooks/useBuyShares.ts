@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { FractionalRealEstateClient } from '../contracts/FractionalRealestate'
 import { microAlgo } from '@algorandfoundation/algokit-utils'
+import { useState } from 'react'
+import { FractionalRealEstateClient } from '../contracts/FractionalRealEstate'
 
 /**
  * Helper to create a box reference for a BoxMap in Algorand smart contracts.
