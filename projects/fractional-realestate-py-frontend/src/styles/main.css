@@ -1,3 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background-color: #ffffff;
+    color: #1f2937;
+    line-height: 1.5;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gray-900 hover:bg-gray-800 text-white font-medium px-6 py-2.5 border border-gray-900 transition-colors duration-150;
+  }
+  
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-gray-700 font-medium px-6 py-2.5 border border-gray-300 transition-colors duration-150;
+  }
+  
+  .card {
+    @apply bg-white border border-gray-200 shadow-sm;
+  }
+  
+  .nav-link {
+    @apply text-gray-600 hover:text-gray-900 font-medium transition-colors duration-150 px-3 py-1;
+  }
+  
+  .nav-link-active {
+    @apply text-gray-900 font-medium px-3 py-1;
+  }
+}

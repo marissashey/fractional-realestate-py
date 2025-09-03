@@ -1,9 +1,9 @@
 {
-  "name": "fractional-realestate-ts-frontend",
+  "name": "responsive-donations-frontend",
   "version": "0.1.0",
   "author": {
-    "name": "Gabriel Kuettel",
-    "email": "gabrielkuettel@gmail.com"
+    "name": "Responsive Donations Team",
+    "email": "team@responsivedonations.com"
   },
   "private": true,
   "type": "module",

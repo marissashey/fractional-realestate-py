@@ -59,17 +59,23 @@ class ConditionalClauseStruct(arc4.Struct):
 
 class ResponsiveDonation(ARC4Contract):
     """
-    ResponsiveDonation Contract
+    ResponsiveDonation Contract - MVP Version
     
-    This smart contract supports:
-    1. Instantaneous donations to recipient addresses
-    2. Conditional donations that pay out based on external event resolution
-    3. Event creation and resolution by authorized oracles
+    A smart contract enabling conditional charitable donations based on real-world events.
+    Perfect for disaster relief, climate action, and cause-based giving.
     
-    Key features:
-    - Direct donations with immediate payout
-    - Conditional donations held in escrow until event resolution
-    - Oracle-based event resolution system
+    Core Features:
+    1. 💰 Instantaneous Donations - Direct donations with immediate payout
+    2. 🎯 Conditional Donations - "Donate $1000 to Red Cross IF hurricane hits Miami"
+    3. 🔮 Oracle Resolution - Trusted oracles resolve event outcomes
+    4. 🚀 Mixed Donations - Combine instant + conditional in one transaction
+    5. 📊 Query Interface - Discover events and clauses
+    
+    Use Cases:
+    - Climate disaster relief (donate if hurricane/wildfire occurs)
+    - Charity matching (donate if fundraising goal is met)
+    - Sports betting for good (donate to charity if team wins)
+    - Political action (donate if legislation passes)
     """
     
     def __init__(self) -> None:
@@ -125,9 +131,10 @@ class ResponsiveDonation(ARC4Contract):
     ) -> bool:
         """
         Process an immediate donation with instant payout to recipient.
+        Perfect for direct charitable giving with immediate impact.
         
         Args:
-            recipient_address: Address to receive the donation
+            recipient_address: Address to receive the donation (charity/recipient)
             payment: The payment transaction (must be grouped with the app call)
             
         Returns:
@@ -137,6 +144,7 @@ class ResponsiveDonation(ARC4Contract):
         assert payment.receiver == Global.current_application_address, "Payment must be sent to contract"
         assert payment.sender == Txn.sender, "Payment sender must match transaction sender"
         assert payment.amount > 0, "Payment amount must be greater than 0"
+        assert payment.amount >= 1000, "Minimum donation is 1000 microAlgos (0.001 ALGO)"
         
         # Immediately transfer the funds to the recipient
         itxn.Payment(
@@ -157,11 +165,12 @@ class ResponsiveDonation(ARC4Contract):
     ) -> arc4.UInt64:
         """
         Create a conditional donation that will pay out based on event resolution.
+        Example: "Donate $1000 to Red Cross IF hurricane hits Miami, otherwise return to me"
         
         Args:
             event_id: The event this donation depends on
             recipient_yes: Address to receive funds if event resolves to true
-            recipient_no: Address to receive funds if event resolves to false
+            recipient_no: Address to receive funds if event resolves to false (often donor)
             payment: The payment transaction (funds held in escrow)
             
         Returns:
@@ -186,6 +195,72 @@ class ResponsiveDonation(ARC4Contract):
             clause_id=clause_id,
             event_id=event_id,
             payout_amount=arc4.UInt64(payment.amount),
+            recipient_yes=recipient_yes,
+            recipient_no=recipient_no,
+            donor_address=arc4.Address(Txn.sender),
+            executed=arc4.Bool(False)
+        )
+        
+        return clause_id
+    
+    @abimethod()
+    def mixed_donation(
+        self,
+        instant_recipient: arc4.Address,
+        instant_amount: arc4.UInt64,
+        event_id: arc4.UInt64,
+        recipient_yes: arc4.Address,
+        recipient_no: arc4.Address,
+        payment: gtxn.PaymentTransaction
+    ) -> arc4.UInt64:
+        """
+        Create both instantaneous and conditional donations in a single transaction.
+        Simplified version that handles one conditional donation to keep it simple.
+        
+        Args:
+            instant_recipient: Address to receive instant donation (use zero address if no instant donation)
+            instant_amount: Amount for instant donation (use 0 if no instant donation)
+            event_id: Event ID for conditional donation
+            recipient_yes: Address to receive funds if event resolves to true
+            recipient_no: Address to receive funds if event resolves to false
+            payment: The payment transaction covering both donations
+            
+        Returns:
+            The clause ID for the conditional donation created
+        """
+        # Validate the payment transaction
+        assert payment.receiver == Global.current_application_address, "Payment must be sent to contract"
+        assert payment.sender == Txn.sender, "Payment sender must match transaction sender"
+        assert payment.amount > 0, "Payment amount must be greater than 0"
+        
+        # Calculate total required amount
+        conditional_amount = arc4.UInt64(payment.amount - instant_amount.native)
+        assert conditional_amount.native > 0, "Conditional amount must be greater than 0"
+        
+        total_required = instant_amount.native + conditional_amount.native
+        assert payment.amount == total_required, "Payment amount must equal sum of donations"
+        
+        # Process instant donation if specified
+        if instant_amount.native > 0:
+            itxn.Payment(
+                amount=instant_amount.native,
+                receiver=instant_recipient.native,
+                fee=0,
+            ).submit()
+        
+        # Validate event exists and is pending for conditional donation
+        assert event_id in self.listed_events, "Event does not exist"
+        event_struct = self.listed_events[event_id].copy()
+        assert event_struct.pending.native, "Event has already been resolved"
+        
+        # Create conditional clause with unique ID
+        sender_hash = op.sha256(Txn.sender.bytes)
+        clause_id = arc4.UInt64(Global.latest_timestamp + op.btoi(sender_hash[:8]) + 1)
+        
+        self.conditional_clauses[clause_id] = ConditionalClauseStruct(
+            clause_id=clause_id,
+            event_id=event_id,
+            payout_amount=conditional_amount,
             recipient_yes=recipient_yes,
             recipient_no=recipient_no,
             donor_address=arc4.Address(Txn.sender),
@@ -310,3 +385,44 @@ class ResponsiveDonation(ARC4Contract):
         """
         assert clause_id in self.conditional_clauses, "Clause does not exist"
         return self.conditional_clauses[clause_id]
+    
+    @abimethod(readonly=True)
+    def get_pending_events(self) -> arc4.DynamicArray[arc4.UInt64]:
+        """
+        Get all pending event IDs. Oracle can use this to know which events to monitor.
+        Note: This is a simplified version - in production you'd want pagination
+        for large numbers of events.
+        
+        Returns:
+            Array of pending event IDs (empty for now - placeholder for interface)
+        """
+        # Note: In practice, you'd implement this more efficiently with indexing
+        # This is a simplified version for demonstration that shows the interface
+        pending_events = arc4.DynamicArray[arc4.UInt64]()
+        
+        # This would require iteration through box storage in a real implementation
+        # For now, this is a placeholder that shows the interface
+        return pending_events
+    
+    @abimethod(readonly=True)
+    def get_clauses_for_event(
+        self,
+        event_id: arc4.UInt64
+    ) -> arc4.DynamicArray[arc4.UInt64]:
+        """
+        Get all clause IDs that depend on a specific event.
+        Oracle can call this when resolving an event to get all clauses to execute.
+        
+        Args:
+            event_id: The event to get clauses for
+            
+        Returns:
+            Array of clause IDs that depend on this event (empty for now - placeholder)
+        """
+        # Note: In a production system, you'd maintain an index of event->clauses
+        # This is a simplified interface for demonstration
+        clause_ids = arc4.DynamicArray[arc4.UInt64]()
+        
+        # This would require efficient indexing in a real implementation
+        # For now, this shows the intended interface
+        return clause_ids
