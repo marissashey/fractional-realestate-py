@@ -11,7 +11,7 @@ path = ".algokit/generators/create_env_file"
 
 [project]
 type = 'contract'
-name = 'fractional-realestate-py-contracts'
+name = 'reactive-altruism-contracts'
 artifacts = 'smart_contracts/artifacts'
 
 [project.deploy]

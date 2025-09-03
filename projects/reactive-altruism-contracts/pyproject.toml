@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "fractional-realestate-py-contracts"
+name = "reactive-altruism-contracts"
 version = "0.1.0"
-description = "Algorand smart contracts"
+description = "Reactive Altruism - Conditional charitable donations on Algorand"
 authors = ["Gabriel Kuettel <gabrielkuettel@gmail.com>"]
 readme = "README.md"
 package-mode = false
