@@ -178,3 +178,12 @@ node_modules
 debug_traces/
 .algokit/static-analysis/ # Replace with .algokit/static-analysis/tealer/ to enable snapshot checks in CI
 .algokit/sources
+
+# Smart contract build artifacts (can be regenerated with `algokit project run build`)
+smart_contracts/artifacts/
+
+# Poetry lockfile (uncomment for hackathon to avoid dependency conflicts)
+poetry.lock
+
+# Personal IDE settings (keep workspace settings, ignore personal ones)
+.vscode/settings.json

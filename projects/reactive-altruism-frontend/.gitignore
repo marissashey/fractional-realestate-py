@@ -20,6 +20,19 @@ env/
 /dist
 .DS_Store
 
+# Generated TypeScript clients (regenerated with `npm run generate:app-clients`)
+src/contracts/*.ts
+!src/contracts/README.md
+
+# Lock files (can cause conflicts in hackathons - use `npm install` to regenerate)
+package-lock.json
+
+# Personal IDE settings (keep workspace settings, ignore personal ones)
+.vscode/settings.json
+
+# Cache directories
+.vite/
+
 
 npm-debug.log*
 yarn-debug.log*
