@@ -1,30 +1,58 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useSnackbar } from 'notistack'
+import { useAppClient } from '../context/AppClientContext'
+import { useConditionalDonation } from '../hooks/useConditionalDonation'
 
 export default function ConditionalDonationForm() {
   const { activeAddress } = useWallet()
   const { enqueueSnackbar } = useSnackbar()
+  const { appClient } = useAppClient()
+  const { createConditionalDonation, loading: donationLoading, error, success } = useConditionalDonation(appClient, activeAddress)
   
   const [eventId, setEventId] = useState('')
   const [recipientYes, setRecipientYes] = useState('')
   const [recipientNo, setRecipientNo] = useState('')
   const [donationAmount, setDonationAmount] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!activeAddress) return
+    if (!activeAddress || !appClient) {
+      enqueueSnackbar('Please connect your wallet first', { variant: 'warning' })
+      return
+    }
 
-    setIsLoading(true)
-    try {
-      // TODO: Integrate with ResponsiveDonation contract
-      enqueueSnackbar('Feature coming soon! Contract integration in progress.', { variant: 'info' })
-    } catch (error) {
-      console.error('Error creating conditional donation:', error)
-      enqueueSnackbar('Failed to create conditional donation. Please try again.', { variant: 'error' })
-    } finally {
-      setIsLoading(false)
+    if (!eventId || !recipientYes || !recipientNo || !donationAmount) {
+      enqueueSnackbar('Please fill in all fields', { variant: 'warning' })
+      return
+    }
+
+    await createConditionalDonation(eventId, recipientYes, recipientNo, donationAmount)
+  }
+
+  // Show success notifications
+  React.useEffect(() => {
+    if (success) {
+      enqueueSnackbar(success, { variant: 'success' })
+      // Clear form on success
+      setEventId('')
+      setRecipientYes('')
+      setRecipientNo('')
+      setDonationAmount('')
+    }
+  }, [success, enqueueSnackbar])
+
+  // Show error notifications
+  React.useEffect(() => {
+    if (error) {
+      enqueueSnackbar(error, { variant: 'error' })
+    }
+  }, [error, enqueueSnackbar])
+
+  // Auto-fill recipient_no with user's address if empty
+  const handleRecipientNoFocus = () => {
+    if (!recipientNo && activeAddress) {
+      setRecipientNo(activeAddress)
     }
   }
 
@@ -93,7 +121,8 @@ export default function ConditionalDonationForm() {
               type="text"
               value={recipientNo}
               onChange={(e) => setRecipientNo(e.target.value)}
-              placeholder="Your address"
+              onFocus={handleRecipientNoFocus}
+              placeholder="Your address (auto-filled)"
               className="w-full px-3 py-2 border border-gray-300 focus:border-gray-900 focus:outline-none"
               required
             />
@@ -109,10 +138,10 @@ export default function ConditionalDonationForm() {
 
         <button
           type="submit"
-          disabled={isLoading || !activeAddress}
+          disabled={donationLoading || !activeAddress || !appClient}
           className="w-full btn-primary"
         >
-          {isLoading ? 'Creating...' : 'Create Conditional Donation'}
+          {donationLoading ? 'Creating...' : 'Create Conditional Donation'}
         </button>
       </form>
     </div>

@@ -1,30 +1,49 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useSnackbar } from 'notistack'
+import { useAppClient } from '../context/AppClientContext'
+import { useInstantDonation } from '../hooks/useInstantDonation'
 
 export default function InstantDonationForm() {
   const { activeAddress } = useWallet()
   const { enqueueSnackbar } = useSnackbar()
+  const { appClient } = useAppClient()
+  const { makeInstantDonation, loading: donationLoading, error, success } = useInstantDonation(appClient, activeAddress)
   
   const [recipientAddress, setRecipientAddress] = useState('')
   const [donationAmount, setDonationAmount] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!activeAddress) return
-
-    setIsLoading(true)
-    try {
-      // TODO: Integrate with ResponsiveDonation contract
-      enqueueSnackbar('Feature coming soon! Contract integration in progress.', { variant: 'info' })
-    } catch (error) {
-      console.error('Error making instant donation:', error)
-      enqueueSnackbar('Failed to make donation. Please try again.', { variant: 'error' })
-    } finally {
-      setIsLoading(false)
+    if (!activeAddress || !appClient) {
+      enqueueSnackbar('Please connect your wallet first', { variant: 'warning' })
+      return
     }
+
+    if (!recipientAddress || !donationAmount) {
+      enqueueSnackbar('Please fill in all fields', { variant: 'warning' })
+      return
+    }
+
+    await makeInstantDonation(recipientAddress, donationAmount)
   }
+
+  // Show success notifications
+  React.useEffect(() => {
+    if (success) {
+      enqueueSnackbar(success, { variant: 'success' })
+      // Clear form on success
+      setRecipientAddress('')
+      setDonationAmount('')
+    }
+  }, [success, enqueueSnackbar])
+
+  // Show error notifications
+  React.useEffect(() => {
+    if (error) {
+      enqueueSnackbar(error, { variant: 'error' })
+    }
+  }, [error, enqueueSnackbar])
 
   const presetAmounts = [
     { label: '$10', algos: 10 },
@@ -92,10 +111,10 @@ export default function InstantDonationForm() {
 
         <button
           type="submit"
-          disabled={isLoading || !activeAddress}
+          disabled={donationLoading || !activeAddress || !appClient}
           className="w-full btn-primary"
         >
-          {isLoading ? 'Processing...' : 'Donate Now'}
+          {donationLoading ? 'Processing...' : 'Donate Now'}
         </button>
       </form>
     </div>

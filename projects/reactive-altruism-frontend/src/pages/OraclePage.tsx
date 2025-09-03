@@ -1,72 +1,92 @@
-import React from 'react'
-import { EyeIcon, ShieldCheckIcon, CpuChipIcon } from '@heroicons/react/24/outline'
+import React, { useState } from 'react'
+import { CpuChipIcon } from '@heroicons/react/24/outline'
+import CreateEventForm from '../components/CreateEventForm'
+import EventsGrid from '../components/EventsGrid'
 
 export default function OraclePage() {
+  const [activeTab, setActiveTab] = useState<'events' | 'create'>('events')
+
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-gray-900 mb-3">Oracle System</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">Oracle & Events</h1>
           <p className="text-gray-600 max-w-lg mx-auto">
-            Event verification system for conditional donations
+            Create and manage events for conditional donations
           </p>
         </div>
 
-        {/* Status */}
-        <div className="card p-8 mb-8">
+        {/* Tab Navigation */}
+        <div className="flex justify-center mb-8">
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('events')}
+              className={`px-6 py-2 text-sm font-medium transition-colors rounded-md ${
+                activeTab === 'events'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Browse Events
+            </button>
+            <button
+              onClick={() => setActiveTab('create')}
+              className={`px-6 py-2 text-sm font-medium transition-colors rounded-md ${
+                activeTab === 'create'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Create Event
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'events' ? (
+          <EventsGrid />
+        ) : (
+          <div className="max-w-2xl mx-auto">
+            <CreateEventForm />
+          </div>
+        )}
+
+        {/* Info Section */}
+        <div className="mt-12 card p-8">
           <div className="text-center">
             <div className="w-16 h-16 bg-gray-100 flex items-center justify-center mx-auto mb-4">
               <CpuChipIcon className="h-8 w-8 text-gray-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Development Phase</h2>
-            <p className="text-gray-600">
-              The Oracle system is under development. This will enable automated verification 
-              of real-world events to trigger conditional donations.
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">How It Works</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Events are created with designated oracles who are responsible for resolving whether 
+              the event occurred. Once resolved, conditional donations linked to that event can be executed.
             </p>
           </div>
         </div>
 
-        {/* Planned Features */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
           <div className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Types</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Examples</h3>
             <ul className="space-y-2 text-gray-600">
               <li>• Natural disaster monitoring</li>
               <li>• Sports event outcomes</li>
               <li>• Legislative tracking</li>
               <li>• Economic milestones</li>
+              <li>• Fundraising goals</li>
             </ul>
           </div>
 
           <div className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Features</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Oracle Responsibilities</h3>
             <ul className="space-y-2 text-gray-600">
-              <li>• Multi-source verification</li>
-              <li>• Cryptographic proofs</li>
-              <li>• Consensus validation</li>
-              <li>• Audit trail</li>
+              <li>• Monitor assigned events</li>
+              <li>• Provide accurate resolutions</li>
+              <li>• Maintain transparency</li>
+              <li>• Enable donation execution</li>
+              <li>• Build community trust</li>
             </ul>
-          </div>
-        </div>
-
-        {/* Architecture */}
-        <div className="card p-8 mt-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">System Architecture</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <h4 className="font-medium text-gray-900 mb-2">Data Sources</h4>
-              <p className="text-sm text-gray-600">Multiple trusted feeds</p>
-            </div>
-            
-            <div className="text-center">
-              <h4 className="font-medium text-gray-900 mb-2">Validation</h4>
-              <p className="text-sm text-gray-600">Consensus verification</p>
-            </div>
-            
-            <div className="text-center">
-              <h4 className="font-medium text-gray-900 mb-2">Integration</h4>
-              <p className="text-sm text-gray-600">Smart contract connection</p>
-            </div>
           </div>
         </div>
       </div>

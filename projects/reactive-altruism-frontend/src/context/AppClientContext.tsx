@@ -1,10 +1,10 @@
 // This context provider gives the rest of the app access to the smart contract's client.
-// The client lets us call methods on the FractionalRealEstate smart contract directly on the Algorand blockchain.
-// Any component in the app can use this context to interact with the contract (for example, to list a property or buy shares).
+// The client lets us call methods on the ResponsiveDonation smart contract directly on the Algorand blockchain.
+// Any component in the app can use this context to interact with the contract (for example, to create donations or resolve events).
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
-// These imports allow us to interact with the FractionalRealEstate smart contract on the Algorand blockchain
-import { FractionalRealEstateClient, FractionalRealEstateFactory } from '../contracts/FractionalRealEstate'
+// These imports allow us to interact with the ResponsiveDonation smart contract on the Algorand blockchain
+import { ResponsiveDonationClient, ResponsiveDonationFactory } from '../contracts/ResponsiveDonation'
 // This utility helps us connect to the Algorand blockchain network
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 // useWallet is a React hook that lets us connect to the user's Algorand wallet (like Pera or Lute)
@@ -21,7 +21,7 @@ import {
 const APP_ID = getAppIdFromViteEnvironment()
 
 type AppClientContextType = {
-  appClient: FractionalRealEstateClient | null
+  appClient: ResponsiveDonationClient | null
   error: Error | null
 }
 
@@ -38,7 +38,7 @@ export const AppClientProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // stableSigner ensures we always use the correct signer for the current address
   const stableSigner = useMemo(() => transactionSigner, [activeAddress])
 
-  const [appClient, setAppClient] = useState<FractionalRealEstateClient | null>(null)
+  const [appClient, setAppClient] = useState<ResponsiveDonationClient | null>(null)
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export const AppClientProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       // The factory pattern lets us easily create a client for our specific smart contract
       // The factory knows how to connect to the blockchain and which account to use
-      const factory = new FractionalRealEstateFactory({
+      const factory = new ResponsiveDonationFactory({
         defaultSender: activeAddress, // The user's wallet address
         algorand, // The Algorand client instance
       })

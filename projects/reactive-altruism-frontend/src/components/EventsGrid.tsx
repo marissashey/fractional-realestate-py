@@ -1,150 +1,136 @@
-import { useState } from 'react'
-
-interface Event {
-  id: string
-  description: string
-  oracle: string
-  status: 'pending' | 'resolved'
-  resolution?: boolean
-  createdAt: string
-}
+import { useEffect, useState } from 'react'
+import { useWallet } from '@txnlab/use-wallet-react'
+import { useSnackbar } from 'notistack'
+import { useAppClient } from '../context/AppClientContext'
+import { useEvents } from '../hooks/useEvents'
+import { EventStruct } from '../contracts/ResponsiveDonation'
+import { ellipseAddress } from '../utils/ellipseAddress'
 
 export default function EventsGrid() {
-  // Mock data for now - will be replaced with real contract data
-  const [events] = useState<Event[]>([
-    {
-      id: "1701234567890",
-      description: "Hurricane hits Miami by December 31, 2024",
-      oracle: "ORACLE1234...ABCD",
-      status: 'pending',
-      createdAt: "2024-01-15"
-    },
-    {
-      id: "1701234567891", 
-      description: "Ethereum price reaches $5000 by end of year",
-      oracle: "ORACLE5678...EFGH",
-      status: 'pending',
-      createdAt: "2024-01-14"
-    },
-    {
-      id: "1701234567892",
-      description: "Climate bill passes US Senate by March 2025", 
-      oracle: "ORACLE9012...IJKL",
-      status: 'resolved',
-      resolution: true,
-      createdAt: "2024-01-10"
+  const { activeAddress } = useWallet()
+  const { enqueueSnackbar } = useSnackbar()
+  const { appClient } = useAppClient()
+  const { events, fetchEvents, resolveEvent, loading, error, success } = useEvents(appClient, activeAddress)
+
+  const [selectedEvent, setSelectedEvent] = useState<[bigint, EventStruct] | null>(null)
+  const [resolution, setResolution] = useState<boolean>(true)
+
+  useEffect(() => {
+    if (appClient) {
+      fetchEvents()
     }
-  ])
+  }, [appClient, fetchEvents])
 
-  const [filter, setFilter] = useState<'all' | 'pending' | 'resolved'>('all')
+  // Show error notifications
+  if (error) {
+    enqueueSnackbar(error, { variant: 'error' })
+  }
 
-  const filteredEvents = events.filter(event => {
-    if (filter === 'all') return true
-    return event.status === filter
-  })
+  // Show success notifications
+  if (success) {
+    enqueueSnackbar(success, { variant: 'success' })
+  }
 
-  const getStatusBadge = (event: Event) => {
-    if (event.status === 'pending') {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-          ⏳ Pending
-        </span>
-      )
+  const handleResolveEvent = async (eventId: string, resolution: boolean) => {
+    try {
+      await resolveEvent(eventId, resolution)
+      setSelectedEvent(null)
+    } catch (error) {
+      console.error('Error resolving event:', error)
+    }
+  }
+
+  const canResolveEvent = (event: EventStruct) => {
+    return activeAddress && 
+           event.oracleAddress.toLowerCase() === activeAddress.toLowerCase() && 
+           event.pending
+  }
+
+  const getStatusBadge = (event: EventStruct) => {
+    if (event.pending) {
+      return <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">Pending</span>
     } else {
-      return (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          event.resolution 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
-          {event.resolution ? '✅ True' : '❌ False'}
-        </span>
-      )
+      const resolvedText = event.resolution ? 'Resolved: True' : 'Resolved: False'
+      const bgColor = event.resolution ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+      return <span className={`px-2 py-1 text-xs ${bgColor} rounded`}>{resolvedText}</span>
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="card p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading events...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">Browse Events</h2>
-        
-        {/* Filter Buttons */}
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            All Events
-          </button>
-          <button
-            onClick={() => setFilter('pending')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === 'pending'
-                ? 'bg-yellow-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Pending
-          </button>
-          <button
-            onClick={() => setFilter('resolved')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === 'resolved'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Resolved
-          </button>
-        </div>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-900">Available Events</h2>
+        <button
+          onClick={fetchEvents}
+          className="btn-secondary"
+          disabled={loading}
+        >
+          Refresh
+        </button>
       </div>
 
-      {filteredEvents.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">🔍</span>
-          </div>
-          <p className="text-gray-600">No events found for the selected filter.</p>
+      {events.length === 0 ? (
+        <div className="card p-8 text-center">
+          <p className="text-gray-600">No events created yet.</p>
+          <p className="text-sm text-gray-500 mt-2">Create an event to enable conditional donations.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEvents.map((event) => (
-            <div key={event.id} className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">
-                    {event.description}
-                  </h3>
+          {events.map(([eventId, event]) => (
+            <div key={eventId.toString()} className="card p-6">
+              <div className="mb-4">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-sm text-gray-500">Event ID: {eventId.toString()}</span>
                   {getStatusBadge(event)}
                 </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{event.eventString}</h3>
               </div>
 
-              <div className="space-y-3 text-sm text-gray-600">
-                <div className="flex items-center space-x-2">
-                  <span className="w-4 h-4 text-gray-400">🆔</span>
-                  <span className="font-mono text-xs">{event.id}</span>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <span className="w-4 h-4 text-gray-400">🔮</span>
-                  <span className="font-mono text-xs">{event.oracle}</span>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <span className="w-4 h-4 text-gray-400">📅</span>
-                  <span>{new Date(event.createdAt).toLocaleDateString()}</span>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div>
+                  <span className="font-medium">Oracle:</span>{' '}
+                  <span className="font-mono">{ellipseAddress(event.oracleAddress)}</span>
                 </div>
               </div>
 
-              {event.status === 'pending' && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <button className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
-                    🎯 Use for Conditional Donation
-                  </button>
+              {canResolveEvent(event) && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-sm text-blue-600 mb-3">You can resolve this event</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleResolveEvent(eventId.toString(), true)}
+                      className="flex-1 px-3 py-2 text-sm bg-green-600 text-white hover:bg-green-700 transition-colors"
+                      disabled={loading}
+                    >
+                      Resolve: True
+                    </button>
+                    <button
+                      onClick={() => handleResolveEvent(eventId.toString(), false)}
+                      className="flex-1 px-3 py-2 text-sm bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      disabled={loading}
+                    >
+                      Resolve: False
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!event.pending && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    This event has been resolved. Conditional donations can now be executed.
+                  </p>
                 </div>
               )}
             </div>

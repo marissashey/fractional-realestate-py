@@ -1,186 +1,190 @@
-import { useState } from 'react'
-
-interface DonationRecord {
-  id: string
-  type: 'instant' | 'conditional'
-  amount: number
-  recipient: string
-  status: 'completed' | 'pending' | 'cancelled'
-  date: string
-  eventDescription?: string
-  eventResolution?: boolean
-}
+import { useEffect } from 'react'
+import { useWallet } from '@txnlab/use-wallet-react'
+import { useSnackbar } from 'notistack'
+import { useAppClient } from '../context/AppClientContext'
+import { useClauses } from '../hooks/useClauses'
+import { useEvents } from '../hooks/useEvents'
+import { ellipseAddress } from '../utils/ellipseAddress'
 
 export default function DonationHistory() {
-  // Mock data for now - will be replaced with real contract data
-  const [donations] = useState<DonationRecord[]>([
-    {
-      id: "txn_001",
-      type: 'instant',
-      amount: 50,
-      recipient: "CHARITY123...ABCD",
-      status: 'completed',
-      date: "2024-01-20"
-    },
-    {
-      id: "txn_002", 
-      type: 'conditional',
-      amount: 100,
-      recipient: "REDCROSS456...EFGH",
-      status: 'pending',
-      date: "2024-01-18",
-      eventDescription: "Hurricane hits Miami by December 31, 2024"
-    },
-    {
-      id: "txn_003",
-      type: 'conditional',
-      amount: 25,
-      recipient: "CLIMATE789...IJKL", 
-      status: 'completed',
-      date: "2024-01-15",
-      eventDescription: "Climate bill passes US Senate by March 2025",
-      eventResolution: true
+  const { activeAddress } = useWallet()
+  const { enqueueSnackbar } = useSnackbar()
+  const { appClient } = useAppClient()
+  const { clauses, fetchClauses, executeConditionalClause, getClausesForDonor, loading: clausesLoading, error: clausesError } = useClauses(appClient, activeAddress)
+  const { events, fetchEvents, loading: eventsLoading, error: eventsError } = useEvents(appClient, activeAddress)
+
+  useEffect(() => {
+    if (appClient && activeAddress) {
+      fetchClauses()
+      fetchEvents()
     }
-  ])
+  }, [appClient, activeAddress, fetchClauses, fetchEvents])
 
-  const [filter, setFilter] = useState<'all' | 'instant' | 'conditional'>('all')
+  // Show error notifications
+  if (clausesError) {
+    enqueueSnackbar(clausesError, { variant: 'error' })
+  }
+  if (eventsError) {
+    enqueueSnackbar(eventsError, { variant: 'error' })
+  }
 
-  const filteredDonations = donations.filter(donation => {
-    if (filter === 'all') return true
-    return donation.type === filter
-  })
+  if (!activeAddress) {
+    return (
+      <div className="card p-8 text-center">
+        <p className="text-gray-600">Connect your wallet to view donation history</p>
+      </div>
+    )
+  }
 
-  const getStatusBadge = (donation: DonationRecord) => {
-    switch (donation.status) {
-      case 'completed':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            ✅ Completed
-          </span>
-        )
-      case 'pending':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            ⏳ Pending
-          </span>
-        )
-      case 'cancelled':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            ❌ Cancelled
-          </span>
-        )
+  const userClauses = activeAddress ? getClausesForDonor(activeAddress) : []
+  const eventsMap = new Map(events.map(([id, event]) => [id.toString(), event]))
+
+  const handleExecuteClause = async (clauseId: string) => {
+    try {
+      await executeConditionalClause(clauseId)
+    } catch (error) {
+      console.error('Error executing clause:', error)
     }
   }
 
-  const getTypeIcon = (type: 'instant' | 'conditional') => {
-    return type === 'instant' ? '💰' : '🎯'
+  const getClauseStatus = (clause: any) => {
+    const event = eventsMap.get(clause.eventId.toString())
+    if (!event) return { status: 'unknown', canExecute: false }
+    
+    if (event.pending) {
+      return { status: 'waiting', canExecute: false }
+    } else if (clause.executed) {
+      return { status: 'executed', canExecute: false }
+    } else {
+      return { status: 'ready', canExecute: true }
+    }
   }
 
-  const totalDonated = donations
-    .filter(d => d.status === 'completed')
-    .reduce((sum, d) => sum + d.amount, 0)
+  // Calculate stats
+  const totalDonated = userClauses
+    .filter(([_, clause]) => clause.executed)
+    .reduce((sum, [_, clause]) => sum + Number(clause.payoutAmount) / 1_000_000, 0)
 
-  const pendingAmount = donations
-    .filter(d => d.status === 'pending')
-    .reduce((sum, d) => sum + d.amount, 0)
+  const pendingAmount = userClauses
+    .filter(([_, clause]) => !clause.executed)
+    .reduce((sum, [_, clause]) => sum + Number(clause.payoutAmount) / 1_000_000, 0)
+
+  if (clausesLoading || eventsLoading) {
+    return (
+      <div className="card p-8 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading your donations...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">Donation History</h2>
-        
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-3 py-1 text-sm font-medium transition-colors ${
-              filter === 'all'
-                ? 'text-gray-900 border-b border-gray-900'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setFilter('instant')}
-            className={`px-3 py-1 text-sm font-medium transition-colors ${
-              filter === 'instant'
-                ? 'text-gray-900 border-b border-gray-900'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Instant
-          </button>
-          <button
-            onClick={() => setFilter('conditional')}
-            className={`px-3 py-1 text-sm font-medium transition-colors ${
-              filter === 'conditional'
-                ? 'text-gray-900 border-b border-gray-900'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Conditional
-          </button>
-        </div>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-900">Your Donation History</h2>
+        <button
+          onClick={() => {
+            fetchClauses()
+            fetchEvents()
+          }}
+          className="btn-secondary"
+          disabled={clausesLoading || eventsLoading}
+        >
+          Refresh
+        </button>
       </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-6 text-center">
         <div>
-          <div className="text-2xl font-bold text-gray-900">{totalDonated}</div>
+          <div className="text-2xl font-bold text-gray-900">{totalDonated.toFixed(3)}</div>
           <div className="text-sm text-gray-600">ALGO Donated</div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-gray-900">{pendingAmount}</div>
+          <div className="text-2xl font-bold text-gray-900">{pendingAmount.toFixed(3)}</div>
           <div className="text-sm text-gray-600">ALGO Pending</div>
         </div>
         <div>
-          <div className="text-2xl font-bold text-gray-900">{donations.length}</div>
+          <div className="text-2xl font-bold text-gray-900">{userClauses.length}</div>
           <div className="text-sm text-gray-600">Total Donations</div>
         </div>
       </div>
-
-      {/* Donations List */}
-      {filteredDonations.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-600">No donations found</p>
-          <p className="text-gray-500 text-sm mt-1">Start donating to see your history</p>
+      
+      {userClauses.length === 0 ? (
+        <div className="card p-8 text-center">
+          <p className="text-gray-600">No conditional donations yet</p>
+          <p className="text-sm text-gray-500 mt-2">Your conditional donation history will appear here</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredDonations.map((donation) => (
-            <div key={donation.id} className="card p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="font-medium text-gray-900 capitalize">
-                      {donation.type} Donation
-                    </h3>
-                    {getStatusBadge(donation)}
-                  </div>
-                  
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p><strong>Amount:</strong> {donation.amount} ALGO</p>
-                    <p><strong>Recipient:</strong> <span className="font-mono text-xs">{donation.recipient}</span></p>
-                    <p><strong>Date:</strong> {new Date(donation.date).toLocaleDateString()}</p>
+        <div className="space-y-4">
+          {userClauses.map(([clauseId, clause]) => {
+            const event = eventsMap.get(clause.eventId.toString())
+            const { status, canExecute } = getClauseStatus(clause)
+            
+            return (
+              <div key={clauseId.toString()} className="card p-6">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded">
+                        🎯 Conditional
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded ${
+                        status === 'executed' 
+                          ? 'bg-green-100 text-green-800'
+                          : status === 'ready'
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {status === 'executed' ? '✅ Executed' : 
+                         status === 'ready' ? '🚀 Ready to Execute' : '⏳ Waiting for Event'}
+                      </span>
+                    </div>
                     
-                    {donation.eventDescription && (
-                      <div className="mt-2 p-2 bg-gray-50 border border-gray-200">
-                        <p className="text-gray-700 text-sm">
-                          <strong>Event:</strong> {donation.eventDescription}
+                    <div className="text-lg font-medium text-gray-900 mb-2">
+                      {(Number(clause.payoutAmount) / 1_000_000).toFixed(3)} ALGO
+                    </div>
+                    
+                    <div className="text-gray-600 space-y-1">
+                      <p className="mb-1">
+                        <span className="font-medium">Event:</span> {event?.eventString || 'Unknown Event'}
+                      </p>
+                      <p className="text-sm">
+                        <span className="font-medium">If true →</span> {ellipseAddress(clause.recipientYes)}
+                      </p>
+                      <p className="text-sm">
+                        <span className="font-medium">If false →</span> {ellipseAddress(clause.recipientNo)}
+                      </p>
+                      {event && !event.pending && (
+                        <p className="text-sm font-medium">
+                          <span className="font-medium">Event resolved:</span>{' '}
+                          <span className={event.resolution ? 'text-green-600' : 'text-red-600'}>
+                            {event.resolution ? 'True' : 'False'}
+                          </span>
                         </p>
-                        {donation.eventResolution !== undefined && (
-                          <p className="text-xs mt-1">
-                            <strong>Result:</strong> {donation.eventResolution ? 'True' : 'False'}
-                          </p>
-                        )}
+                      )}
+                    </div>
+                    
+                    {canExecute && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <button
+                          onClick={() => handleExecuteClause(clauseId.toString())}
+                          className="btn-primary"
+                          disabled={clausesLoading}
+                        >
+                          Execute Donation
+                        </button>
                       </div>
                     )}
                   </div>
+                  
+                  <div className="text-sm text-gray-500">
+                    Clause ID: {clauseId.toString()}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
