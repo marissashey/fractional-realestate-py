@@ -1,18 +1,17 @@
-# fractional-realestate-py
+# dCharity
 
 This starter full stack project has been generated using AlgoKit. See below for default getting started instructions.
 
 ## Setup
+### Initial Setup
 
-### Initial setup
-1. Clone this repository to your local machine.
-2. Ensure [Docker](https://www.docker.com/) is installed and operational. Then, install `AlgoKit` following this [guide](https://github.com/algorandfoundation/algokit-cli#install).
-3. Run `algokit project bootstrap all` in the project directory. This command sets up your environment by installing necessary dependencies, setting up a Python virtual environment, and preparing your `.env` file.
-4. In the case of a smart contract project, execute `algokit generate env-file -a target_network localnet` from the `fractional-realestate-py-contracts` directory to create a `.env.localnet` file with default configuration for `localnet`.
-5. To build your project, execute `algokit project run build`. This compiles your project and prepares it for running.
-6. For project-specific instructions, refer to the READMEs of the child projects:
-   - Smart Contracts: [fractional-realestate-py-contracts](projects/fractional-realestate-py-contracts/README.md)
-   - Frontend Application: [fractional-realestate-py-frontend](projects/fractional-realestate-py-frontend/README.md)
+1. **Clone the repository** to your local machine.
+2. **Install and start [Docker](https://www.docker.com/)**, then set up `AlgoKit` by following the [installation guide](https://github.com/algorandfoundation/algokit-cli#install).
+3. In your project directory, run `algokit localnet start` to launch a local Algorand network.
+4. Initialize your environment by running `algokit project bootstrap all`. This will install all required dependencies, configure a Python virtual environment, and generate your `.env` file.
+5. Build the smart contracts by executing `algokit project run build` inside `/projects/reactive-alturism-contracts`. This step compiles your contracts and prepares them for deployment.
+6. Deploy the contracts locally by running `algokit project deploy localnet` in the same directory.
+7. Start the frontend server by running `npm run dev` inside `/projects/reactive-alturism-frontend`.
 
 > This project is structured as a monorepo, refer to the [documentation](https://github.com/algorandfoundation/algokit-cli/blob/main/docs/features/project/run.md) to learn more about custom command orchestration via `algokit project run`.
 
@@ -49,6 +48,10 @@ Refer to the [fractional-realestate-py-contracts](projects/fractional-realestate
 When you compile and generate smart contract artifacts, your frontend component will automatically generate typescript application clients from smart contract artifacts and move them to `frontend/src/contracts` folder, see [`generate:app-clients` in package.json](projects/fractional-realestate-py-frontend/package.json). Afterwards, you are free to import and use them in your frontend application.
 
 The frontend starter also provides an example of interactions with your FractionalRealEstateClient in [`AppCalls.tsx`](projects/fractional-realestate-py-frontend/src/components/AppCalls.tsx) component by default.
+
+## Explore the Blockchain
+
+run `algokit explore` to see the blockchain live in action
 
 ## Next Steps
 
