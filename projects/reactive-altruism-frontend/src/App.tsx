@@ -1,8 +1,11 @@
 import { SupportedWallet, WalletId, WalletManager, WalletProvider } from '@txnlab/use-wallet-react'
 import { SnackbarProvider } from 'notistack'
+import { useState, useEffect } from 'react'
 import Home from './Home'
+import EventOracleTestPage from './pages/EventOracleTestPage'
 import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } from './utils/getAlgorandConfigs'
 import { AppClientProvider } from './context/AppClientContext'
+import { EventOracleClientProvider } from './context/EventOracleClientContext'
 
 let supportedWallets: SupportedWallet[]
 
@@ -31,6 +34,20 @@ if (import.meta.env.VITE_ALGOD_NETWORK === 'localnet') {
 
 export default function App() {
   const algodConfig = getAlgodConfigFromViteEnvironment()
+  const [currentRoute, setCurrentRoute] = useState(window.location.pathname)
+
+  // Simple URL routing - listen for URL changes and check on mount
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentRoute(window.location.pathname)
+    }
+    
+    // Check current path on mount
+    setCurrentRoute(window.location.pathname)
+    
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   const walletManager = new WalletManager({
     wallets: supportedWallets,
@@ -48,6 +65,19 @@ export default function App() {
       resetNetwork: true,
     },
   })
+
+  // Route to Event Oracle test page if URL is /oracle
+  if (currentRoute === '/oracle') {
+    return (
+      <SnackbarProvider maxSnack={3}>
+        <WalletProvider manager={walletManager}>
+          <EventOracleClientProvider>
+            <EventOracleTestPage />
+          </EventOracleClientProvider>
+        </WalletProvider>
+      </SnackbarProvider>
+    )
+  }
 
   return (
     <SnackbarProvider maxSnack={3}>
